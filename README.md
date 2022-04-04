@@ -1,2 +1,2 @@
-# -OXRS-AC-TowerController-ESP8266-FW
+# OXRS-AC-TowerController-ESP8266-FW
 New tower controller firmware
