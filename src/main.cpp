@@ -211,6 +211,7 @@ void getConfigSchemaJson(JsonVariant json)
 
   JsonObject towerMode = properties.createNestedObject("towerMode");
   towerMode["type"] = "string";
+  towerMode["description"] = "selects how the channels behave (channels #1-5) --- Single mode means only one channel on at once, good for an all in one light where colors would blend otherwise";
   JsonArray towerEnum = towerMode.createNestedArray("enum");
   towerEnum.add("single");
   towerEnum.add("multi");
@@ -219,15 +220,17 @@ void getConfigSchemaJson(JsonVariant json)
   blinkMillis["type"] = "integer";
   blinkMillis["minimum"] = 0;
   blinkMillis["maximum"] = 10000;
-  blinkMillis["description"] = "Rate to blink a light in milliseconds";
+  blinkMillis["description"] = "Rate to blink a light in milliseconds --- 0-10000 milliseconds possible; Default is 1000ms";
 
   JsonObject timeoutMillis = properties.createNestedObject("timeoutMs");
   timeoutMillis["type"] = "integer";
   timeoutMillis["minimum"] = 0;
   timeoutMillis["maximum"] = 10000;
+  timeoutMillis["description"] = "Rate to expect a flash command, otherwise the tower reverts to internal blink timer so that light keeps flashing. --- 0-10000 milliseconds possible; Default is 2500ms";
 
   JsonObject towerSleep = properties.createNestedObject("towerSleep");
   towerSleep["type"] = "array";
+  towerSleep["description"] = "selects what channels are inactive during sleep state - the state of the channel can still be updated but light won't turn on until sleep state is turned off; great for a bedroom where you don't want to be distrubed expect for certain notifications";
 
   JsonObject towerItems = towerSleep.createNestedObject("items");
   towerItems["type"] = "object";
@@ -260,6 +263,7 @@ void getCommandSchemaJson(JsonVariant json)
 
   JsonObject tower = properties.createNestedObject("tower");
   tower["type"] = "array";
+  tower["description"] = "turns on specified channel(s)(1-6) to specified mode(color, flash, blink) and brightness(0-255)";
 
   JsonObject towerItems = tower.createNestedObject("items");
   towerItems["type"] = "object";
@@ -289,12 +293,15 @@ void getCommandSchemaJson(JsonVariant json)
 
   JsonObject sleeping = properties.createNestedObject("sleep");
   sleeping["type"] = "boolean";
+  sleeping["description"] = "Puts the tower into sleep mode - turns desired channels off, until deactivated";
 
   JsonObject flash = properties.createNestedObject("flash");
   flash["type"] = "boolean";
+  flash["description"] = "used to set the speed at which a light will flash, and can be used to sync multiple tower controllers";
 
   JsonObject restart = properties.createNestedObject("restart");
   restart["type"] = "boolean";
+  restart["description"] = "restarts the tower controller";
 
   // Add any sensor commands
   sensors.setCommandSchema(properties);
