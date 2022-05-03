@@ -92,6 +92,11 @@ uint8_t g_blink_state = false;
 uint32_t blinkMs = DEFAULT_BLINK_RATE;
 unsigned long lastBlink;
 
+// Timeout for flash to use blink instead
+uint8_t g_timeout_state = false;
+uint32_t timeoutMs = DEFAULT_BLINK_RATE;
+unsigned long lastTimeout;
+
 // LED varibles
 uint8_t towermode = TOWER_MODE_SINGLE;   // set default tower mode to single - can be changed via mqtt config
 uint8_t ledmode[6] = {0,0,0,0,0,0};        // mode for each led channel
@@ -211,6 +216,11 @@ void getConfigSchemaJson(JsonVariant json)
   blinkMillis["minimum"] = 0;
   blinkMillis["maximum"] = 10000;
   blinkMillis["description"] = "Rate to blink a light in milliseconds";
+
+  JsonObject timeoutMillis = properties.createNestedObject("timeoutMs");
+  timeoutMillis["type"] = "integer";
+  timeoutMillis["minimum"] = 0;
+  timeoutMillis["maximum"] = 10000;
 
   JsonObject towerSleep = properties.createNestedObject("towerSleep");
   towerSleep["type"] = "array";
@@ -336,13 +346,27 @@ void driver_loop()
     }
     else if (ledmode[chan] == LED_MODE_FLASH) // flash specified channel
     {
-      if (g_flash_state == HIGH)
+      if (g_timeout_state == LOW) // not in timeout - use flash to update light
       {
-        output[chan] = ledbrightness[chan];
+        if (g_flash_state == HIGH)
+        {
+          output[chan] = ledbrightness[chan];
+        }
+        else
+        {
+          output[chan] = 0;
+        }
       }
-      else
+      else // in timeout mode - use internal blink to flash light
       {
-        output[chan] = 0;
+        if (g_blink_state == HIGH)
+        {
+          output[chan] = ledbrightness[chan];
+        }
+        else
+        {
+          output[chan] = 0;
+        }
       }
     }
     else if (ledmode[chan] == LED_MODE_BLINK) // blink specified channel
@@ -508,6 +532,8 @@ void jsonCommand(JsonVariant json)
   if (json.containsKey("flash"))
   {
     g_flash_state = json["flash"].as<bool>() ? HIGH : LOW;
+    g_timeout_state = LOW;
+    lastTimeout = millis();
   }
 
   if (json.containsKey("restart") && json["restart"].as<bool>())
@@ -542,6 +568,11 @@ void jsonConfig(JsonVariant json)
   if (json.containsKey("blinkMs")) // for updating blink speed
   {
     blinkMs = json["blinkMs"].as<uint32_t>();
+  }
+
+  if (json.containsKey("timeoutMs")) // for updating expected flash timeout
+  {
+    timeoutMs = json["timeoutMs"].as<uint32_t>();
   }
 
   if (json.containsKey("towerSleep"))
@@ -757,6 +788,12 @@ void loop()
   driver_loop();  // update driver channels
   sensors.oled();  // update OLED
   sensors.tele();  // update mqtt sensors
+
+  if ((millis() - lastTimeout) > timeoutMs)
+  {
+    g_timeout_state = HIGH;
+    lastTimeout = millis();
+  }
 
   if ((millis() - lastBlink) > blinkMs)
   { 
