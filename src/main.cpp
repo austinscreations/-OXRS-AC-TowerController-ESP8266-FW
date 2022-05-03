@@ -41,6 +41,7 @@
 #include <OXRS_SENSORS.h>           // For QWICC I2C sensors
 #include <Adafruit_NeoPixel.h>      // control LED channels
 #include <WiFiManager.h>            // captive wifi AP config
+#include <MqttLogger.h>        // for mqtt and serial logging
 
 #if defined(MCU8266)
 #include <ESP8266WiFi.h>            // For networking
@@ -127,6 +128,9 @@ OXRS_MQTT mqtt(mqttClient);
 
 // REST API
 OXRS_API api(mqtt);
+
+// Logging
+MqttLogger logger(mqttClient, "log", MqttLoggerMode::MqttAndSerial);
 
 // I2C sensors
 OXRS_SENSORS sensors(mqtt);
@@ -402,12 +406,17 @@ void driver_loop()
 /*--------------------------- MQTT/API -----------------*/
 void mqttConnected() 
 {
+  // MqttLogger doesn't copy the logging topic to an internal
+  // buffer so we have to use a static array here
+  static char logTopic[64];
+  logger.setTopic(mqtt.getLogTopic(logTopic));
+
   // Publish device adoption info
   DynamicJsonDocument json(JSON_ADOPT_MAX_SIZE);
   mqtt.publishAdopt(api.getAdopt(json.as<JsonVariant>()));
 
   // Log the fact we are now connected
-  Serial.println("[TLC] mqtt connected");
+  logger.println("[TLC] mqtt connected");
 }
 
 void mqttDisconnected(int state) 
@@ -417,31 +426,31 @@ void mqttDisconnected(int state)
   switch (state)
   {
     case MQTT_CONNECTION_TIMEOUT:
-      Serial.println(F("[TLC] mqtt connection timeout"));
+      logger.println(F("[TLC] mqtt connection timeout"));
       break;
     case MQTT_CONNECTION_LOST:
-      Serial.println(F("[TLC] mqtt connection lost"));
+      logger.println(F("[TLC] mqtt connection lost"));
       break;
     case MQTT_CONNECT_FAILED:
-      Serial.println(F("[TLC] mqtt connect failed"));
+      logger.println(F("[TLC] mqtt connect failed"));
       break;
     case MQTT_DISCONNECTED:
-      Serial.println(F("[TLC] mqtt disconnected"));
+      logger.println(F("[TLC] mqtt disconnected"));
       break;
     case MQTT_CONNECT_BAD_PROTOCOL:
-      Serial.println(F("[TLC] mqtt bad protocol"));
+      logger.println(F("[TLC] mqtt bad protocol"));
       break;
     case MQTT_CONNECT_BAD_CLIENT_ID:
-      Serial.println(F("[TLC] mqtt bad client id"));
+      logger.println(F("[TLC] mqtt bad client id"));
       break;
     case MQTT_CONNECT_UNAVAILABLE:
-      Serial.println(F("[TLC] mqtt unavailable"));
+      logger.println(F("[TLC] mqtt unavailable"));
       break;
     case MQTT_CONNECT_BAD_CREDENTIALS:
-      Serial.println(F("[TLC] mqtt bad credentials"));
+      logger.println(F("[TLC] mqtt bad credentials"));
       break;      
     case MQTT_CONNECT_UNAUTHORIZED:
-      Serial.println(F("[TLC] mqtt unauthorised"));
+      logger.println(F("[TLC] mqtt unauthorised"));
       break;      
   }
 }
@@ -450,7 +459,7 @@ uint8_t getChannel(JsonVariant json)
 {
   if (!json.containsKey("channel"))
   {
-    Serial.println(F("[TLC] missing channel"));
+    logger.println(F("[TLC] missing channel"));
     return 0;
   }
   
@@ -459,7 +468,7 @@ uint8_t getChannel(JsonVariant json)
   // Check the controller is valid for this device
   if (channel <= 0 || channel > 6)
   {
-    Serial.println(F("[TLC] invalid channel"));
+    logger.println(F("[TLC] invalid channel"));
     return 0;
   }
 
@@ -489,7 +498,7 @@ if (json.containsKey("mode"))
     }
     else 
     {
-      Serial.println(F("[TLC] invalid mode"));
+      logger.println(F("[TLC] invalid mode"));
       return;
     }
   }
@@ -561,7 +570,7 @@ void jsonConfig(JsonVariant json)
     }
     else 
     {
-      Serial.println(F("[TLC] invalid Tower Mode Config"));
+      logger.println(F("[TLC] invalid Tower Mode Config"));
     }
   }
 
@@ -630,8 +639,8 @@ void initialiseWifi()
   // Display the MAC address on serial
   char mac_display[18];
   sprintf_P(mac_display, PSTR("%02X:%02X:%02X:%02X:%02X:%02X"), mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-  Serial.print(F("[TLC] mac address: "));
-  Serial.println(mac_display);
+  logger.print(F("[TLC] mac address: "));
+  logger.println(mac_display);
 
   // Update OLED display
   sensors.oled(mac);
@@ -646,8 +655,8 @@ void initialiseWifi()
   }
 
   // Display IP address on serial
-  Serial.print(F("[TLC] ip address: "));
-  Serial.println(WiFi.localIP());
+  logger.print(F("[TLC] ip address: "));
+  logger.println(WiFi.localIP());
 
   // Update OLED display
   sensors.oled(Ethernet.localIP());
@@ -674,8 +683,8 @@ void initialiseEthernet()
   // Display the MAC address on serial
   char mac_display[18];
   sprintf_P(mac_display, PSTR("%02X:%02X:%02X:%02X:%02X:%02X"), mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-  Serial.print(F("[TLC] mac address: "));
-  Serial.println(mac_display);
+  logger.print(F("[TLC] mac address: "));
+  logger.println(mac_display);
 
   // Update OLED display
   sensors.oled(mac);
@@ -693,21 +702,21 @@ void initialiseEthernet()
   delay(350);
 
   // Get an IP address via DHCP
-  Serial.print(F("[TLC] ip address: "));
+  logger.print(F("[TLC] ip address: "));
   if (!Ethernet.begin(mac, DHCP_TIMEOUT_MS, DHCP_RESPONSE_TIMEOUT_MS))
   {
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-      Serial.println(F("ethernet shield not found"));
+      logger.println(F("ethernet shield not found"));
     } else if (Ethernet.linkStatus() == LinkOFF) {
-      Serial.println(F("ethernet cable not connected"));
+      logger.println(F("ethernet cable not connected"));
     } else {
-      Serial.println(F("failed to setup ethernet using DHCP"));
+      logger.println(F("failed to setup ethernet using DHCP"));
     }
     return;
   }
   
   // Display IP address on serial
-  Serial.println(Ethernet.localIP());
+  logger.println(Ethernet.localIP());
 
   // Update OLED display
   sensors.oled(Ethernet.localIP());
@@ -726,14 +735,14 @@ void initialiseSerial()
   Serial.begin(SERIAL_BAUD_RATE);
   delay(1000);
   
-  Serial.println(F("[TLC ] starting up..."));
+  logger.println(F("[TLC ] starting up..."));
 
   DynamicJsonDocument json(128);
   getFirmwareJson(json.as<JsonVariant>());
 
-  Serial.print(F("[TLC ] "));
-  serializeJson(json, Serial);
-  Serial.println();
+  logger.print(F("[TLC ] "));
+  serializeJson(json, logger);
+  logger.println();
 }
 
 /*--------------------------- Program -------------------------------*/
