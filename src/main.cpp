@@ -176,9 +176,11 @@ void getNetworkJson(JsonVariant json)
   
   #if defined(ETHMODE)
   Ethernet.MACAddress(mac);
+  network["mode"] = "ethernet";
   network["ip"] = Ethernet.localIP();
   #elif defined(WIFIMODE)
   WiFi.macAddress(mac);
+  network["mode"] = "wifi";
   network["ip"] = WiFi.localIP();
   #endif
   
