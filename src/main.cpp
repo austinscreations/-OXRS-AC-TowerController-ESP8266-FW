@@ -660,7 +660,7 @@ void initialiseWifi()
   logger.println(WiFi.localIP());
 
   // Update OLED display
-  sensors.oled(Ethernet.localIP());
+  sensors.oled(WiFi.localIP());
 
   // Set up MQTT (don't attempt to connect yet)
   initialiseMqtt(mac);
