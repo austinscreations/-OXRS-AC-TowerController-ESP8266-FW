@@ -16,8 +16,8 @@
 //#define MCULILY
 
 /*----------------------- Connection Type -----------------------------*/
-//#define ETHMODE
-//#define WIFIMODE
+//#define ETH_MODE
+//#define WIFI_MODE
 
 /*------------------------- I2C pins ----------------------------------*/
 //#define I2C_SDA   0
@@ -45,7 +45,7 @@
 
 #if defined(MCU8266)
 #include <ESP8266WiFi.h>            // For networking
-#if defined(ETHMODE)
+#if defined(ETH_MODE)
 #include <Ethernet.h>               // For networking
 #include <SPI.h>                    // For ethernet
 #endif
@@ -75,7 +75,7 @@
 #define       DEFAULT_BLINK_RATE        1000
 
 // Ethernet
-#if defined(ETHMODE)
+#if defined(ETH_MODE)
 #define DHCP_TIMEOUT_MS             15000
 #define DHCP_RESPONSE_TIMEOUT_MS    4000
 #define WIZNET_RST_PIN              2
@@ -112,12 +112,12 @@ uint8_t sleepState = false;              // is the device supposed to be asleep
 char * g_stack_start;
 
 /*--------------------------- Instantiate Global Objects -----------------*/
-#if defined(ETHMODE)
+#if defined(ETH_MODE)
 EthernetClient client;
 EthernetServer server(REST_API_PORT);
 #endif
 
-#if defined(WIFIMODE)
+#if defined(WIFI_MODE)
 WiFiClient client;
 WiFiServer server(REST_API_PORT);
 #endif
@@ -187,11 +187,11 @@ void getNetworkJson(JsonVariant json)
   
   byte mac[6];
   
-  #if defined(ETHMODE)
+  #if defined(ETH_MODE)
   Ethernet.MACAddress(mac);
   network["mode"] = "ethernet";
   network["ip"] = Ethernet.localIP();
-  #elif defined(WIFIMODE)
+  #elif defined(WIFI_MODE)
   WiFi.macAddress(mac);
   network["mode"] = "wifi";
   network["ip"] = WiFi.localIP();
@@ -637,7 +637,7 @@ void initialiseMqtt(byte * mac)
 }
 
 /*--------------------------- Network -------------------------------*/
-#if defined(WIFIMODE)
+#if defined(WIFI_MODE)
 void initialiseWifi()
 {
   // Ensure we are in the correct WiFi mode
@@ -680,7 +680,7 @@ void initialiseWifi()
 }
 #endif
 
-#if defined(ETHMODE)
+#if defined(ETH_MODE)
 void initialiseEthernet()
 {
   // Get ESP base MAC address
@@ -779,9 +779,9 @@ void setup()
   driver_off();          // Turn all drivers off
 
   // Set up network/MQTT/REST API
-  #if defined(WIFIMODE)
+  #if defined(WIFI_MODE)
   initialiseWifi();
-  #elif defined(ETHMODE)
+  #elif defined(ETH_MODE)
   initialiseEthernet();
   #endif
 }
@@ -792,15 +792,15 @@ void loop()
   mqtt.loop();
 
   // Maintain DHCP lease
-  #if defined(ETHMODE)
+  #if defined(ETH_MODE)
   Ethernet.maintain();
   #endif
   
   // Handle any API requests
-  #if defined(WIFIMODE)
+  #if defined(WIFI_MODE)
   WiFiClient client = server.available();
   api.loop(&client);
-  #elif defined(ETHMODE)
+  #elif defined(ETH_MODE)
   EthernetClient client = server.available();
   api.loop(&client);
   #endif
