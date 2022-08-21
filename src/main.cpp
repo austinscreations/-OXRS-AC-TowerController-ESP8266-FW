@@ -549,6 +549,11 @@ void jsonCommand(JsonVariant json)
     }
   }
 
+  if (json.containsKey("sleep"))
+  {
+    sleepState = json["sleep"].as<bool>() ? HIGH : LOW;
+  }
+
   if (json.containsKey("flash"))
   {
     g_flash_state = json["flash"].as<bool>() ? HIGH : LOW;
