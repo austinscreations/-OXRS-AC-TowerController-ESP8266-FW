@@ -268,6 +268,7 @@ void getCommandSchemaJson(JsonVariant json)
 
   JsonObject tower = properties.createNestedObject("tower");
   tower["type"] = "array";
+  tower["maxItems"] = 6;
   tower["description"] = "turns on specified channel(s)(1-6) to specified mode(color, flash, blink) and brightness(0-255)";
 
   JsonObject towerItems = tower.createNestedObject("items");
@@ -278,7 +279,7 @@ void getCommandSchemaJson(JsonVariant json)
   JsonObject channeling = towerProperties.createNestedObject("channel");
   channeling["type"] = "integer";
   channeling["minimum"] = 1;
-  channeling["maximum"] = 5;
+  channeling["maximum"] = 6;
 
   JsonObject modes = towerProperties.createNestedObject("mode");
   modes["type"] = "string";
