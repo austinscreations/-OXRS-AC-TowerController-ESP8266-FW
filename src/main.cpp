@@ -799,10 +799,10 @@ void loop()
   // Handle any API requests
   #if defined(WIFIMODE)
   WiFiClient client = server.available();
-  api.checkWifi(&client);
+  api.loop(&client);
   #elif defined(ETHMODE)
   EthernetClient client = server.available();
-  api.checkEthernet(&client);
+  api.loop(&client);
   #endif
 
   driver_loop();  // update driver channels
