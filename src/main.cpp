@@ -62,7 +62,6 @@
 #define       LED_MODE_NONE             0
 #define       LED_MODE_COLOUR           1
 #define       LED_MODE_FLASH            3
-#define       LED_MODE_BLINK            4
 
 // Supported Tower modes
 #define       TOWER_MODE_SINGLE         0
@@ -269,7 +268,7 @@ void getCommandSchemaJson(JsonVariant json)
   JsonObject tower = properties.createNestedObject("tower");
   tower["type"] = "array";
   tower["maxItems"] = 6;
-  tower["description"] = "turns on specified channel(s)(1-6) to specified mode(color, flash, blink) and brightness(0-255)";
+  tower["description"] = "turns on specified channel(s)(1-6) to specified mode(color, flash) and brightness(0-255)";
 
   JsonObject towerItems = tower.createNestedObject("items");
   towerItems["type"] = "object";
@@ -286,7 +285,6 @@ void getCommandSchemaJson(JsonVariant json)
   JsonArray modesEnum = modes.createNestedArray("enum");
   modesEnum.add("colour");
   modesEnum.add("flash");
-  modesEnum.add("blink");
 
   JsonObject brightnesss = towerProperties.createNestedObject("brightness");
   brightnesss["type"] = "integer";
@@ -384,17 +382,6 @@ void driver_loop()
         {
           output[chan] = 0;
         }
-      }
-    }
-    else if (ledmode[chan] == LED_MODE_BLINK) // blink specified channel
-    {
-      if (g_blink_state == HIGH)
-      {
-        output[chan] = ledbrightness[chan];
-      }
-      else
-      {
-        output[chan] = 0;
       }
     }
     else
@@ -504,10 +491,6 @@ if (json.containsKey("mode"))
     else if (strcmp(json["mode"], "flash") == 0)
     {
       ledmode[lightchan] = LED_MODE_FLASH;
-    }
-    else if (strcmp(json["mode"], "blink") == 0)
-    {
-      ledmode[lightchan] = LED_MODE_BLINK;
     }
     else 
     {
