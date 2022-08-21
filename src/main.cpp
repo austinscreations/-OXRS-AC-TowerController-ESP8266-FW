@@ -153,6 +153,10 @@ void getFirmwareJson(JsonVariant json)
   firmware["shortName"] = STRINGIFY(FW_SHORT_NAME);
   firmware["maker"] = STRINGIFY(FW_MAKER);
   firmware["version"] = STRINGIFY(FW_VERSION);
+
+#if defined(FW_GITHUB_URL)
+  firmware["githubUrl"] = FW_GITHUB_URL;
+#endif
 }
 
 void getSystemJson(JsonVariant json)
