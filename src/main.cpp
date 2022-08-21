@@ -234,6 +234,7 @@ void getConfigSchemaJson(JsonVariant json)
 
   JsonObject towerSleep = properties.createNestedObject("towerSleep");
   towerSleep["type"] = "array";
+  towerSleep["maxItems"] = 1;
   towerSleep["description"] = "selects what channels are inactive during sleep state - the state of the channel can still be updated but light won't turn on until sleep state is turned off; great for a bedroom where you don't want to be distrubed expect for certain notifications";
 
   JsonObject towerItems = towerSleep.createNestedObject("items");
